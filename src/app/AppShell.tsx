@@ -2,34 +2,33 @@ import { useState } from "react";
 import CameraTab from "../pages/CameraTab";
 import MapTab from "../pages/MapTab";
 
+const NAV_H = 70; // 탭바 높이(px)
+
 export default function AppShell() {
-  const [tab, setTab] = useState<"camera" | "map">("camera");
+  const [tab, setTab] = useState<"camera" | "map">("camera"); // ← 기본을 'map'로 해도 OK
 
   return (
-    <main className="w-full h-[100dvh] flex flex-col bg-black text-white">
-      {/* 현재 선택된 탭의 콘텐츠 */}
-      <div
-        className="overflow-hidden"
-        style={{ height: "calc(100dvh - 70px)" }}   // ✅ 하단 탭 70px 제외한 실높이
+    <main
+      className="w-full h-[100dvh] flex flex-col bg-black text-white"
+      style={{
+        paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`,
+      }}
+    >
+      {tab === "camera" ? <CameraTab /> : <MapTab />}
+      {/* 탭바는 항상 보이게 고정 */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 h-[70px] border-t border-white/10 backdrop-blur bg-black/80 flex items-center justify-around z-[50]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        {tab === "camera" ? <CameraTab /> : <MapTab />}
-      </div>
-
-      {/* 하단 탭 바 */}
-      <nav className="h-[70px] flex justify-around items-center bg-black/80 border-t border-white/10 backdrop-blur">
         <button
           onClick={() => setTab("camera")}
-          className={`px-4 py-2 transition-colors ${
-            tab === "camera" ? "text-blue-400" : "text-gray-400"
-          }`}
+          className={`px-4 py-2 ${tab === "camera" ? "text-blue-400" : "text-gray-400"}`}
         >
           카메라
         </button>
         <button
           onClick={() => setTab("map")}
-          className={`px-4 py-2 transition-colors ${
-            tab === "map" ? "text-blue-400" : "text-gray-400"
-          }`}
+          className={`px-4 py-2 ${tab === "map" ? "text-blue-400" : "text-gray-400"}`}
         >
           지도
         </button>

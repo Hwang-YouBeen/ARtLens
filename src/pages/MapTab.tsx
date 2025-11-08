@@ -1,9 +1,9 @@
 // src/pages/MapTab.tsx
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import { useMemo, useState } from "react";
-
 import BottomSheet from "../components/common/BottomSheet";
 import MyArtGrid from "../components/map/MyArtGrid";
+import { useMyArtStore } from "../store/myArtStore";
 
 // ---------- 타입 & 유틸 ----------
 type Museum = {
@@ -13,16 +13,17 @@ type Museum = {
   visitedAt?: string; // "YYYY-MM-DD"
 };
 
-const fmt = (d?: string) =>
-  d
-    ? new Date(d).toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
+const fmtDate = (iso?: string) =>
+  iso
+    ? new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })
     : "—";
 
-// ---------- 데이터 ----------
+const fmtYMD = (d?: string) =>
+  d
+    ? new Date(d).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })
+    : "—";
+
+// ---------- 데이터(정적 10개) ----------
 const museums: Museum[] = [
   { name: "국립중앙박물관", lat: 37.523984, lng: 126.980355, visitedAt: "2025-11-09" },
   { name: "국립현대미술관 서울관", lat: 37.581717, lng: 126.979596, visitedAt: "2025-10-20" },
@@ -39,14 +40,18 @@ const museums: Museum[] = [
 const defaultCenter = { lat: 37.523984, lng: 126.980355 };
 
 // ---------- 컴포넌트 ----------
+type SelectedUserPin = { kind: "user"; lat: number; lng: number; shotAt?: string; museumName?: string };
+type SelectedStatic = { kind: "static"; lat: number; lng: number; name: string; visitedAt?: string };
+type Selected = SelectedUserPin | SelectedStatic;
+
 export default function MapTab() {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
   });
 
-  // 선택된 마커
-  const [selected, setSelected] = useState<Museum | null>(null);
+  const items = useMyArtStore((s) => s.items); // ✅ 촬영 내역
+  const [selected, setSelected] = useState<Selected | null>(null);
   const containerStyle = useMemo(() => ({ width: "100%", height: "100%" }), []);
 
   if (loadError) {
@@ -64,15 +69,16 @@ export default function MapTab() {
         center={defaultCenter}
         zoom={3}
         options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
-        onClick={() => setSelected(null)}        // ← 지도 클릭 시 닫기
-        onDragStart={() => setSelected(null)}    // ← 지도 드래그 시작 시 닫기 (선택)
-        onZoomChanged={() => setSelected(null)}  // ← 줌 변경 시 닫기 (선택)      
+        onClick={() => setSelected(null)}
+        onDragStart={() => setSelected(null)}
+        onZoomChanged={() => setSelected(null)}
       >
+        {/* ✅ 정적 10핀 */}
         {museums.map((m, i) => (
           <Marker
-            key={i}
+            key={`static-${i}`}
             position={{ lat: m.lat, lng: m.lng }}
-            onClick={() => setSelected(m)}
+            onClick={() => setSelected({ kind: "static", lat: m.lat, lng: m.lng, name: m.name, visitedAt: m.visitedAt })}
             icon={{
               url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
               scaledSize: new window.google.maps.Size(40, 40),
@@ -80,39 +86,77 @@ export default function MapTab() {
           />
         ))}
 
+        {/* ✅ 내 촬영 핀 */}
+        {items
+          .filter((it) => it.lat != null && it.lng != null)
+          .map((it) => (
+            <Marker
+              key={it.id}
+              position={{ lat: it.lat as number, lng: it.lng as number }}
+              onClick={() =>
+                setSelected({
+                  kind: "user",
+                  lat: it.lat as number,
+                  lng: it.lng as number,
+                  shotAt: it.shotAt,
+                  // 규칙: 호작도라면 호암미술관, 아니면 저장된 museumName 또는 '내 위치'
+                  museumName: it.recognizedWorkId === "kkachi_tiger" ? "호암미술관" : it.museumName ?? "내 위치",
+                })
+              }
+              icon={{
+                url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                scaledSize: new window.google.maps.Size(40, 40),
+              }}
+            />
+          ))}
+
+        {/* ✅ 인포윈도우 */}
         {selected && (
           <InfoWindow
             position={{ lat: selected.lat, lng: selected.lng }}
             onCloseClick={() => setSelected(null)}
             options={{ pixelOffset: new window.google.maps.Size(0, -2) }}
           >
-            {/* 말풍선 내부는 흰 배경 → 글자는 검정으로! */}
             <div className="text-black text-sm leading-5">
-              <div>
-                <span className="text-neutral-500">방문일: </span>
-                <span className="font-medium">{fmt(selected.visitedAt)}</span>
-              </div>
-              <div className="mt-1 font-semibold">{selected.name}</div>
+              {selected.kind === "user" ? (
+                <>
+                  <div>
+                    <span className="text-neutral-500">방문일: </span>
+                    <span className="font-medium">{fmtDate(selected.shotAt)}</span>
+                  </div>
+                  <div className="mt-1 font-semibold">{selected.museumName}</div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <span className="text-neutral-500">방문일: </span>
+                    <span className="font-medium">{fmtYMD(selected.visitedAt)}</span>
+                  </div>
+                  <div className="mt-1 font-semibold">{selected.name}</div>
+                </>
+              )}
             </div>
           </InfoWindow>
         )}
       </GoogleMap>
 
-      {/* 하단 바텀시트: 정적 10장 그리드 */}
+      {/* 바텀시트: 내 기록 그리드(정적 10개와 별개) */}
       <BottomSheet
-        snapPoints={[0.1, 0.4, 0.85]}
+        snapPoints={[0.12, 0.45, 0.88]}
         initialSnap={0}
         heightOffset={70}
         header={
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-white/60">나의 예술 기록</div>
-              <div className="text-base font-semibold">모아보기 (10)</div>
+              <div className="text-base font-semibold">모아보기</div>
             </div>
           </div>
         }
       >
-        <MyArtGrid />
+        <div style={{ paddingBottom: "calc(70px + env(safe-area-inset-bottom, 0px))" }}>
+          <MyArtGrid />
+        </div>
       </BottomSheet>
     </div>
   );

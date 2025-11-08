@@ -8,7 +8,10 @@ export default function AppShell() {
   return (
     <main className="w-full h-[100dvh] flex flex-col bg-black text-white">
       {/* 현재 선택된 탭의 콘텐츠 */}
-      <div className="flex-1 overflow-hidden">
+      <div
+        className="overflow-hidden"
+        style={{ height: "calc(100dvh - 70px)" }}   // ✅ 하단 탭 70px 제외한 실높이
+      >
         {tab === "camera" ? <CameraTab /> : <MapTab />}
       </div>
 

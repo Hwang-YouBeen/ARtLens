@@ -135,9 +135,9 @@ export default function BottomSheet({
 
   return (
     <div
-      ref={rootRef}
-      className="fixed left-0 right-0 z-[40] pointer-events-auto"
-      style={{
+    ref={rootRef}
+    className="fixed left-0 right-0 z-[40] pointer-events-none"
+    style={{
         top: topPx ?? 0,
         height: fullH + heightOffset, // 밑으로 조금 더 내려가도록
         willChange: "top",
@@ -145,7 +145,7 @@ export default function BottomSheet({
       }}
     >
       <div className="mx-auto max-w-[1000px] h-full px-3">
-        <div className="rounded-t-2xl bg-neutral-900/85 backdrop-blur border border-white/10 shadow-xl overflow-hidden">
+        <div className="rounded-t-2xl bg-neutral-900/85 backdrop-blur border border-white/10 shadow-xl overflow-hidden pointer-events-auto">
           {/* Grab Header */}
           <div
             ref={dragRef}
@@ -160,8 +160,11 @@ export default function BottomSheet({
 
           {/* Content */}
           <div
-            className="px-4 pb-[calc(70px+env(safe-area-inset-bottom,0px))] overflow-y-auto"
-            style={{ maxHeight: `calc(100vh - ${topPx ?? 0}px)` }}
+            className="px-4 overflow-y-auto"
+            style={{
+                maxHeight: `calc(100vh - ${topPx ?? 0}px)`,
+                paddingBottom: "var(--bottom-safe)",  // 탭바+노치만큼 여백
+            }}
           >
             {children}
           </div>

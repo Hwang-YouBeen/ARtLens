@@ -30,3 +30,15 @@
   .gm-style-iw-c {
     padding-right: 28px !important;   /* 닫기 버튼 자리 확보 */
   }
+
+  :root{
+    --nav-h: 70px; /* 탭바 높이 */
+    --bottom-safe: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+    /* 현재 보이는 뷰포트 높이 (JS에서 채워줌) */
+    --vvh: 100svh;
+  }
+  
+  /* iOS 노치 대응 + 100dvh */
+  @supports (height: 100dvh) {
+    html, body, #root { height: 100dvh; }
+  }

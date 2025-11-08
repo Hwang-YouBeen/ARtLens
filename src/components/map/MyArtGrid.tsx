@@ -94,46 +94,46 @@ export default function MyArtGrid() {
 
       {/* ✅ 라이트박스(확대 + 정보 + 삭제) */}
       {selected && (
-        <div className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative w-full max-w-[720px] rounded-2xl overflow-hidden bg-neutral-900/95 border border-white/10 shadow-2xl">
+        <div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm">
+          <div
+            className="absolute left-3 right-3 rounded-2xl overflow-hidden bg-neutral-900/95 border border-white/10 shadow-2xl flex flex-col"
+            style={{
+              top: 12,
+              // 탭바(70px) + iOS/안드로이드 안전영역 + 여백
+              bottom: "calc(70px + env(safe-area-inset-bottom, 0px) + 12px)",
+              maxHeight: "calc(100svh - (70px + env(safe-area-inset-bottom, 0px) + 24px))",
+            }}
+          >
             {/* 닫기 */}
             <button
               onClick={close}
-              className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 text-black text-lg leading-9 text-center hover:bg-white"
+              className="absolute top-3 right-3 inline-flex items-center justify-center w-15 h-6 rounded-full bg-gray-200/90 text-black text-[11px] leading-none hover:bg-white"
               aria-label="닫기"
             >
-              ×
+              닫 기
             </button>
 
             {/* 이미지 */}
             <div className="w-full bg-black">
               <img
-                src={
-                  selected.kind === "user"
-                    ? selected.item.image
-                    : `/MapTabPics/${selected.art.file}`
-                }
+                src={selected.kind === "user" ? selected.item.image : `/MapTabPics/${selected.art.file}`}
                 alt={selected.kind === "user" ? (selected.item.comment || "my-art") : selected.art.title}
-                className="w-full max-h-[60vh] object-contain"
+                className="w-full max-h-[50vh] object-contain"
               />
             </div>
 
             {/* 정보 */}
-            <div className="p-4 text-white/90 space-y-1">
+            <div className="p-4 text-white/90 space-y-1 overflow-y-auto">
               {selected.kind === "user" ? (
                 <>
                   <div className="text-base font-semibold">
                     {selected.item.recognizedWorkId === "kkachi_tiger" ? "호작도(까치호랑이)" : "내 기록"}
                   </div>
                   <div className="text-sm text-white/80">
-                    {selected.item.recognizedWorkId === "kkachi_tiger"
-                      ? "호암미술관"
-                      : selected.item.museumName ?? "내 위치"}
+                    {selected.item.recognizedWorkId === "kkachi_tiger" ? "호암미술관" : selected.item.museumName ?? "내 위치"}
                   </div>
                   <div className="text-sm text-white/70">촬영일: {fmt(selected.item.shotAt)}</div>
-                  {selected.item.comment && (
-                    <div className="pt-2 text-[13px] leading-5">{selected.item.comment}</div>
-                  )}
+                  {selected.item.comment && <div className="pt-2 text-[13px] leading-5">{selected.item.comment}</div>}
                 </>
               ) : (
                 <>
@@ -143,17 +143,17 @@ export default function MyArtGrid() {
               )}
             </div>
 
-            {/* 삭제 버튼 (내 기록일 때만) */}
-            {selected.kind === "user" && (
-              <div className="p-4 pt-0 flex justify-end">
-                <button
-                  onClick={() => handleDelete(selected.item.id)}
-                  className="px-4 py-2 rounded-lg bg-red-500/90 hover:bg-red-600 text-white text-sm"
-                >
-                  기록 삭제
-                </button>
-              </div>
-            )}
+            {/* ✅ 항상 보이게. 정적 항목이면 닫기 동작 */}
+            <div className="p-4 pt-0 flex justify-end">
+              <button
+                onClick={() =>
+                  selected.kind === "user" ? handleDelete(selected.item.id) : close()
+                }
+                className="px-4 py-2 rounded-lg bg-red-500/90 hover:bg-red-600 text-white text-sm"
+              >
+                기록 삭제
+              </button>
+            </div>
           </div>
         </div>
       )}

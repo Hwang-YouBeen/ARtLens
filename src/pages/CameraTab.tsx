@@ -129,7 +129,7 @@ export default function CameraTab() {
       {/* 하단 UI */}
       <div
         className="absolute left-0 right-0 bg-black/50 backdrop-blur p-4 flex gap-2 items-center z-[40]"
-        style={{ bottom: "calc(70px + env(safe-area-inset-bottom, 0px) + 10px)" }}
+        style={{ bottom: "var(--bottom-safe)", }}
       >
         {/* 시연 토글(나중에 MindAR로 대체) */}
         <button
@@ -147,7 +147,7 @@ export default function CameraTab() {
           placeholder="코멘트를 입력하세요…"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="flex-1 rounded-lg px-3 py-2 text-black"
+          className="flex-1 rounded-lg px-3 py-2 text-white"
         />
         {/* 전송 → AR 말풍선으로 즉시 보이기(저장 아님) */}
         <button

@@ -5,14 +5,11 @@ import MapTab from "../pages/MapTab";
 const NAV_H = 70; // 탭바 높이(px)
 
 export default function AppShell() {
-  const [tab, setTab] = useState<"camera" | "map">("camera"); // ← 기본을 'map'로 해도 OK
+  const [tab, setTab] = useState<"camera" | "map">("camera"); //기본을 카메라로 햇음
 
   return (
     <main
       className="w-full h-[100dvh] flex flex-col bg-black text-white"
-      style={{
-        paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`,
-      }}
     >
       {tab === "camera" ? <CameraTab /> : <MapTab />}
       {/* 탭바는 항상 보이게 고정 */}

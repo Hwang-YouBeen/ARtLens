@@ -1,12 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />    <title>artlens</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>artlens</title>
+
+    <!-- (선택) 성능: wasm 미리 가져오기 -->
+    <link rel="preload" href="/opencv/opencv_js.wasm" as="fetch" crossorigin>
+
+    <!-- ✅ opencv.js가 wasm을 /opencv/opencv_js.wasm 에서 찾도록 경로 고정 -->
+    <script>
+      window.Module = {
+        locateFile: function (path) {
+          if (path.endsWith(".wasm")) return "/opencv/opencv_js.wasm";
+          return "/opencv/" + path;
+        },
+      };
+    </script>
+
+    <!-- ✅ 로컬 정적 자산에서 OpenCV만 단일 로드 (중복 스크립트 금지) -->
+    <script defer src="/opencv/opencv.js"></script>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- 앱 엔트리 -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

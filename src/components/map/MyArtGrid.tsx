@@ -3,23 +3,25 @@ import { useMyArtStore } from "../../store/myArtStore";
 import type { MyArtItem } from "../../store/myArtStore";
 
 type ArtItem = {
-  title: string;
-  artist: string; // 여기선 '박물관'처럼 쓰고 있음
-  file: string;
-};
+    title: string;
+    artist: string;   // <-'박물관'
+    file: string;
+    visitedAt?: string; // ← ISO 날짜 "YYYY-MM-DD"
+    comment?: string;   // ← 코멘트
+  };
 
-const artworks: ArtItem[] = [
-  { title: "금동미륵보살반가사유상 (국보 83호)", artist: "국립중앙박물관", file: "gilt_bodhisattva_statue.jpeg" },
-  { title: "묘법 – 박서보", artist: "국립현대미술관 서울관", file: "ecriture_parkseobo.jpeg" },
-  { title: "노란 옷을 입은 여인상 – 이인성", artist: "대구미술관", file: "lady_in_yellow_leeinseong.jpeg" },
-  { title: "05-IV-71#200 (Universe) – 김환기", artist: "리움미술관", file: "universe_kimwhanki.jpeg" },
-  { title: "공간 – 이우환", artist: "부산시립미술관", file: "space_leewoo-hwan.jpeg" },
-  { title: "별이 빛나는 밤 – 빈센트 반 고흐", artist: "MoMA", file: "starry_night_vangogh.jpeg" },
-  { title: "춤추는 하니와", artist: "도쿄국립박물관", file: "dancing_haniwa.jpeg" },
-  { title: "모나리자 – 레오나르도 다 빈치", artist: "루브르", file: "mona_lisa_davinci.jpeg" },
-  { title: "눈 속의 사냥꾼 – 브뤼겔", artist: "빈 미술사박물관(KHM)", file: "hunters_in_the_snow_breughel.jpeg" },
-  { title: "Whaam! – 로이 리히텐슈타인", artist: "테이트 모던", file: "whaam_lichtenstein.jpeg" },
-];
+  const artworks: ArtItem[] = [
+    { title: "금동미륵보살반가사유상 (국보 83호)", artist: "국립중앙박물관", file: "gilt_bodhisattva_statue.jpeg", visitedAt: "2025-11-01", comment: "정교함이 압도적!" },
+    { title: "묘법 – 박서보", artist: "국립현대미술관 서울관", file: "ecriture_parkseobo.jpeg", visitedAt: "2025-10-20", comment: "질감이 주는 몰입감 굿" },
+    { title: "노란 옷을 입은 여인상 – 이인성", artist: "대구미술관", file: "lady_in_yellow_leeinseong.jpeg", visitedAt: "2025-09-13", comment: "채도의 대비가 선명해요" },
+    { title: "05-IV-71#200 (Universe) – 김환기", artist: "리움미술관", file: "universe_kimwhanki.jpeg", visitedAt: "2025-08-30", comment: "점과 공간의 리듬이 좋아요" },
+    { title: "공간 – 이우환", artist: "부산시립미술관", file: "space_leewoo-hwan.jpeg", visitedAt: "2025-08-01", comment: "여백의 미를 다시 보게 됨" },
+    { title: "별이 빛나는 밤 – 빈센트 반 고흐", artist: "MoMA", file: "starry_night_vangogh.jpeg", visitedAt: "2023-08-20", comment: "실물의 붓자국이 살아있다" },
+    { title: "춤추는 하니와", artist: "도쿄국립박물관", file: "dancing_haniwa.jpeg", visitedAt: "2024-04-14", comment: "생동감이 귀엽다" },
+    { title: "모나리자 – 레오나르도 다 빈치", artist: "루브르", file: "mona_lisa_davinci.jpeg", visitedAt: "2024-12-05", comment: "사람이 정말 많았음…" },
+    { title: "눈 속의 사냥꾼 – 브뤼겔", artist: "빈 미술사박물관(KHM)", file: "hunters_in_the_snow_breughel.jpeg", visitedAt: "2024-12-07", comment: "겨울 풍경 디테일 미쳤다" },
+    { title: "Whaam! – 로이 리히텐슈타인", artist: "테이트 모던", file: "whaam_lichtenstein.jpeg", visitedAt: "2022-11-03", comment: "팝아트의 상징성 체감" },
+  ];
 
 const fmt = (iso?: string) =>
   iso ? new Date(iso).toLocaleString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }) : "";
@@ -72,23 +74,29 @@ export default function MyArtGrid() {
 
         {/* ✅ 정적 10장 */}
         {artworks.map((a) => (
-          <button
+        <button
             type="button"
             key={a.file}
             className="relative group"
             onClick={() => setSelected({ kind: "static", art: a })}
-          >
+        >
             <img
-              src={`/MapTabPics/${a.file}`}
-              alt={a.title}
-              loading="lazy"
-              className="w-full h-[110px] object-cover rounded-lg bg-white/10"
+            src={`/MapTabPics/${a.file}`}
+            alt={a.title}
+            loading="lazy"
+            className="w-full h-[110px] object-cover rounded-lg bg-white/10"
             />
             <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] transition">
-              <p className="font-semibold text-center px-2 leading-tight">{a.title}</p>
-              <p className="text-gray-300 text-[9px] mt-1">{a.artist}</p>
+            <p className="font-semibold text-center px-2 leading-tight">{a.title}</p>
+            <p className="text-gray-300 text-[9px] mt-1">{a.artist}</p>
+
+            {/* ▼ 추가: 관람일 + 코멘트 요약 */}
+            {a.visitedAt && <p className="text-gray-300 text-[9px] mt-1">{fmt(a.visitedAt)}</p>}
+            {a.comment && (
+                <p className="text-[9px] mt-1 px-2 text-center truncate w-10/12">{a.comment}</p>
+            )}
             </div>
-          </button>
+        </button>
         ))}
       </div>
 
@@ -137,8 +145,16 @@ export default function MyArtGrid() {
                 </>
               ) : (
                 <>
-                  <div className="text-base font-semibold">{selected.art.title}</div>
-                  <div className="text-sm text-white/80">{selected.art.artist}</div>
+                    <div className="text-base font-semibold">{selected.art.title}</div>
+                    <div className="text-sm text-white/80">{selected.art.artist}</div>
+
+                    {/* ▼ 추가: 관람일 + 코멘트 */}
+                    {selected.art.visitedAt && (
+                    <div className="text-sm text-white/70">관람일: {fmt(selected.art.visitedAt)}</div>
+                    )}
+                    {selected.art.comment && (
+                    <div className="pt-2 text-[13px] leading-5">{selected.art.comment}</div>
+                    )}
                 </>
               )}
             </div>

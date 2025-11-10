@@ -1,29 +1,16 @@
 // src/pages/MapTab.tsx
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
-import { useMemo, useState } from "react";
+import { GoogleMap, useJsApiLoader, Marker, OverlayView } from "@react-google-maps/api";import { useMemo, useState } from "react";
 import BottomSheet from "../components/common/BottomSheet";
 import MyArtGrid from "../components/map/MyArtGrid";
 import { useMyArtStore } from "../store/myArtStore";
 
-// ---------- 타입 & 유틸 ----------
-type Museum = {
-  name: string;
-  lat: number;
-  lng: number;
-  visitedAt?: string; // "YYYY-MM-DD"
-};
+type Museum = { name: string; lat: number; lng: number; visitedAt?: string };
 
 const fmtDate = (iso?: string) =>
-  iso
-    ? new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })
-    : "—";
-
+  iso ? new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }) : "—";
 const fmtYMD = (d?: string) =>
-  d
-    ? new Date(d).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })
-    : "—";
+  d ? new Date(d).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }) : "—";
 
-// ---------- 데이터(정적 10개) ----------
 const museums: Museum[] = [
   { name: "국립중앙박물관", lat: 37.523984, lng: 126.980355, visitedAt: "2025-11-09" },
   { name: "국립현대미술관 서울관", lat: 37.581717, lng: 126.979596, visitedAt: "2025-10-20" },
@@ -39,9 +26,8 @@ const museums: Museum[] = [
 
 const defaultCenter = { lat: 37.523984, lng: 126.980355 };
 
-// ---------- 컴포넌트 ----------
 type SelectedUserPin = { kind: "user"; lat: number; lng: number; shotAt?: string; museumName?: string };
-type SelectedStatic = { kind: "static"; lat: number; lng: number; name: string; visitedAt?: string };
+type SelectedStatic  = { kind: "static"; lat: number; lng: number; name: string; visitedAt?: string };
 type Selected = SelectedUserPin | SelectedStatic;
 
 export default function MapTab() {
@@ -50,17 +36,36 @@ export default function MapTab() {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
   });
 
-  const items = useMyArtStore((s) => s.items); // ✅ 촬영 내역
+  const items = useMyArtStore((s) => s.items);       // 내 촬영 기록
+  const latestId = items[0]?.id;                     // 최신 기록 id
+
   const [selected, setSelected] = useState<Selected | null>(null);
+  const [sheetSnap, setSheetSnap] = useState(0);
+  const [sheetKey, setSheetKey] = useState(0);
+
   const containerStyle = useMemo(() => ({ width: "100%", height: "100%" }), []);
 
-  if (loadError) {
-    console.error("Google Maps loadError:", loadError);
-    return <div className="text-red-400 grid place-items-center">Map load error</div>;
-  }
-  if (!isLoaded) {
-    return <div className="text-gray-400 grid place-items-center">Loading map...</div>;
-  }
+  // ✅ 실제 파일명/경로와 일치!
+  const RED_URL  = "/icons/pin-red.png";
+  const GOLD_URL = "/icons/pin-gold.png";
+
+  // isLoaded 이후에만 google.maps.Size/Point 사용
+  const iconObj = (url: string): google.maps.Icon | undefined =>
+    isLoaded
+      ? {
+          url,
+          scaledSize: new window.google.maps.Size(36, 36),
+          anchor: new window.google.maps.Point(18, 34),
+        }
+      : undefined;
+
+  if (loadError) return <div className="text-red-400 grid place-items-center">Map load error</div>;
+  if (!isLoaded) return <div className="text-gray-400 grid place-items-center">Loading map...</div>;
+
+  const closeSheet = () => {
+    setSheetSnap(0);
+    setSheetKey((k) => k + 1);
+  };
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -73,84 +78,86 @@ export default function MapTab() {
         onDragStart={() => setSelected(null)}
         onZoomChanged={() => setSelected(null)}
       >
-        {/* ✅ 정적 10핀 */}
+        {/* 정적 박물관: 전부 빨간 압정 */}
         {museums.map((m, i) => (
           <Marker
             key={`static-${i}`}
             position={{ lat: m.lat, lng: m.lng }}
-            onClick={() => setSelected({ kind: "static", lat: m.lat, lng: m.lng, name: m.name, visitedAt: m.visitedAt })}
-            icon={{
-              url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-              scaledSize: new window.google.maps.Size(40, 40),
-            }}
+            onClick={() =>
+              setSelected({ kind: "static", lat: m.lat, lng: m.lng, name: m.name, visitedAt: m.visitedAt })
+            }
+            icon={iconObj(RED_URL) ?? RED_URL}
           />
         ))}
 
-        {/* ✅ 내 촬영 핀 */}
+        {/* 내 기록: 최신만 골드, 나머진 레드 */}
         {items
           .filter((it) => it.lat != null && it.lng != null)
-          .map((it) => (
-            <Marker
-              key={it.id}
-              position={{ lat: it.lat as number, lng: it.lng as number }}
-              onClick={() =>
-                setSelected({
-                  kind: "user",
-                  lat: it.lat as number,
-                  lng: it.lng as number,
-                  shotAt: it.shotAt,
-                  // 규칙: 호작도라면 호암미술관, 아니면 저장된 museumName 또는 '내 위치'
-                  museumName: it.recognizedWorkId === "kkachi_tiger" ? "호암미술관" : it.museumName ?? "내 위치",
-                })
-              }
-              icon={{
-                url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-                scaledSize: new window.google.maps.Size(40, 40),
-              }}
-            />
-          ))}
+          .map((it) => {
+            const url = it.id === latestId ? GOLD_URL : RED_URL;
+            return (
+              <Marker
+                key={it.id}
+                position={{ lat: it.lat as number, lng: it.lng as number }}
+                onClick={() =>
+                  setSelected({
+                    kind: "user",
+                    lat: it.lat as number,
+                    lng: it.lng as number,
+                    shotAt: it.shotAt,
+                    museumName: it.recognizedWorkId === "kkachi_tiger" ? "호암미술관" : it.museumName ?? "내 위치",
+                  })
+                }
+                icon={iconObj(url) ?? url}
+              />
+            );
+          })}
 
-        {/* ✅ 인포윈도우 */}
         {selected && (
-          <InfoWindow
-            position={{ lat: selected.lat, lng: selected.lng }}
-            onCloseClick={() => setSelected(null)}
-            options={{ pixelOffset: new window.google.maps.Size(0, -2) }}
-          >
-            <div className="text-black text-sm leading-5">
-              {selected.kind === "user" ? (
-                <>
-                  <div>
-                    <span className="text-neutral-500">방문일: </span>
-                    <span className="font-medium">{fmtDate(selected.shotAt)}</span>
-                  </div>
-                  <div className="mt-1 font-semibold">{selected.museumName}</div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <span className="text-neutral-500">방문일: </span>
-                    <span className="font-medium">{fmtYMD(selected.visitedAt)}</span>
-                  </div>
-                  <div className="mt-1 font-semibold">{selected.name}</div>
-                </>
-              )}
-            </div>
-          </InfoWindow>
-        )}
+            <OverlayView
+                position={{ lat: selected.lat, lng: selected.lng }}
+                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+                <div className="relative -translate-y-4">
+                {/* 꼬리(핀 위에) */}
+                <div className="absolute left-1/2 -translate-x-1/2 top-0 w-0 h-0 border-l-8 border-r-8 border-b-8
+                                border-l-transparent border-r-transparent border-b-[#0B1224]/90 drop-shadow" />
+                {/* 카드 */}
+                <div className="mt-2 min-w-[220px] max-w-[260px] rounded-xl bg-[#0B1224]/90 text-white shadow-xl
+                                border border-[#F2B950]/35 p-3 backdrop-blur">
+                    {selected.kind === "user" ? (
+                    <>
+                        <div className="text-[12px] text-white/65">방문일</div>
+                        <div className="text-[13px] font-semibold">{fmtDate(selected.shotAt)}</div>
+                        <div className="mt-1 text-[13px]">{selected.museumName}</div>
+                    </>
+                    ) : (
+                    <>
+                        <div className="text-[12px] text-white/65">방문일</div>
+                        <div className="text-[13px] font-semibold">{fmtYMD(selected.visitedAt)}</div>
+                        <div className="mt-1 text-[13px]">{selected.name}</div>
+                    </>
+                    )}
+                </div>
+                </div>
+            </OverlayView>
+            )}
       </GoogleMap>
 
-      {/* 바텀시트: 내 기록 그리드(정적 10개와 별개) */}
+      {/* 바텀시트: 헤더에서 닫기 버튼 제거한 버전 */}
       <BottomSheet
+        key={sheetKey}
         snapPoints={[0.12, 0.45, 0.88]}
-        initialSnap={0}
+        initialSnap={sheetSnap}
+        onSnapChange={setSheetSnap}
         heightOffset={70}
         header={
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 pr-1">
             <div>
               <div className="text-sm text-white/60">나의 예술 기록</div>
               <div className="text-base font-semibold">모아보기</div>
             </div>
+            {/* 닫기 버튼 제거 */}
           </div>
         }
       >

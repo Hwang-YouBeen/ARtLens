@@ -47,7 +47,7 @@ export default function MyArtGrid() {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-3 px-4 pb-8">
+      <div className="grid grid-cols-3 gap-1.5 px-0 pb-8">
         {/* ✅ 내 촬영 기록(최신순) */}
         {items.map((it) => (
           <button
@@ -60,8 +60,8 @@ export default function MyArtGrid() {
               src={it.thumb || it.image}
               alt={it.comment || "my-art"}
               loading="lazy"
-              className="w-full h-[110px] object-cover rounded-lg bg-white/10"
-            />
+              className="w-full h-[110px] object-cover rounded-none bg-white/5"
+                          />
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] transition">
               <p className="font-semibold text-center px-2 leading-tight">
                 {it.recognizedWorkId === "kkachi_tiger" ? "호작도 · 호암미술관" : it.museumName ?? "내 기록"}
@@ -113,13 +113,16 @@ export default function MyArtGrid() {
             }}
           >
             {/* 닫기 */}
-            <button
-              onClick={close}
-              className="absolute top-3 right-3 inline-flex items-center justify-center w-15 h-6 rounded-full bg-gray-200/90 text-black text-[11px] leading-none hover:bg-white"
-              aria-label="닫기"
-            >
-              닫 기
-            </button>
+            <div className="absolute top-3 right-3 z-[5]">
+                <button
+                onClick={close}
+                aria-label="닫기"
+                className="px-3 py-1.5 rounded-lg border border-[#F2B950]/40 bg-black/30 text-[13px] text-white hover:bg-white/10"
+                >
+                X
+                </button>
+            </div>
+
 
             {/* 이미지 */}
             <div className="w-full bg-black">
@@ -140,7 +143,7 @@ export default function MyArtGrid() {
                   <div className="text-sm text-white/80">
                     {selected.item.recognizedWorkId === "kkachi_tiger" ? "호암미술관" : selected.item.museumName ?? "내 위치"}
                   </div>
-                  <div className="text-sm text-white/70">촬영일: {fmt(selected.item.shotAt)}</div>
+                  <div className="text-sm text-white/70">관람 일: {fmt(selected.item.shotAt)}</div>
                   {selected.item.comment && <div className="pt-2 text-[13px] leading-5">{selected.item.comment}</div>}
                 </>
               ) : (

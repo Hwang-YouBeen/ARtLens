@@ -1,4 +1,3 @@
-// src/components/common/BottomSheet.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
@@ -32,8 +31,8 @@ export default function BottomSheet({
 
   // 화면 높이(탭바 여백 포함)
   const fullH = useMemo(() => {
-    const safe = Number(getComputedStyle(document.documentElement).getPropertyValue("--sat"))
-      || 0;
+    const safe =
+      Number(getComputedStyle(document.documentElement).getPropertyValue("--sat")) || 0;
     return window.innerHeight - (heightOffset + safe);
   }, [heightOffset]);
 
@@ -47,9 +46,11 @@ export default function BottomSheet({
   };
 
   useEffect(() => {
-    // iOS safe-area 값을 CSS var 로 노출 (grab 영역 계산용)
+    // iOS safe-area 값을 CSS var 로 노출
     const safe = parseInt(
-      getComputedStyle(document.documentElement).getPropertyValue("env(safe-area-inset-bottom)") || "0",
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "env(safe-area-inset-bottom)"
+      ) || "0",
       10
     );
     document.documentElement.style.setProperty("--sat", String(safe || 0));
@@ -60,14 +61,13 @@ export default function BottomSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fullH]);
 
-  // 드래그 시작
+  // 드래그 시작/중/끝
   const onStart = (clientY: number) => {
     setIsDragging(true);
     startY.current = clientY;
     startTop.current = topPx ?? 0;
   };
 
-  // 드래그 중
   const onMove = (clientY: number) => {
     if (!isDragging) return;
     const delta = clientY - startY.current;
@@ -75,7 +75,6 @@ export default function BottomSheet({
     setTopPx(next);
   };
 
-  // 드래그 끝 -> 가장 가까운 스냅으로
   const onEnd = () => {
     if (!isDragging) return;
     setIsDragging(false);
@@ -133,42 +132,67 @@ export default function BottomSheet({
     snapToTop(next);
   };
 
+  // 금색 포인트 컬러(한 번에 조정)
+  const GOLD = "#F2B950";
+
   return (
     <div
-    ref={rootRef}
-    className="fixed left-0 right-0 z-[40] pointer-events-none"
-    style={{
+      ref={rootRef}
+      className="fixed left-0 right-0 z-[40] pointer-events-auto"
+      style={{
         top: topPx ?? 0,
-        height: fullH + heightOffset, // 밑으로 조금 더 내려가도록
+        height: fullH + heightOffset,
         willChange: "top",
         transition: isDragging ? "none" : "top 220ms cubic-bezier(.2,.8,.2,1)",
       }}
     >
-      <div className="mx-auto max-w-[1000px] h-full px-3">
-        <div className="rounded-t-2xl bg-neutral-900/85 backdrop-blur border border-white/10 shadow-xl overflow-hidden pointer-events-auto">
+      <div className="mx-0 w-full h-full px-0">
+        {/* ▼▼▼ 바텀시트 컨테이너 — 네이비+금가루 배경 적용 ▼▼▼ */}
+        <div className="relative rounded-t-none border-none shadow-xl overflow-hidden text-white">
+
+          {/* 배경 레이어 - 불투명 네이비 + 금가루 */}
+          <div className="absolute inset-0 -z-10 pointer-events-none">
+          {/* 1) 완전 불투명 네이비 (뒤 배경 색 안 섞이게) */}
+          <div className="absolute inset-0 bg-[#0B1224]" />
+  
+         {/* 2) 은은한 골드 라디얼 글로우 (블렌드 안 씀) */}
+          <div className="absolute inset-0 opacity-45">
+              <div className="absolute inset-0 bg-[radial-gradient(800px_560px_at_15%_10%,rgba(242,185,80,0.10),transparent_60%),radial-gradient(900px_640px_at_85%_25%,rgba(242,185,80,0.08),transparent_60%),radial-gradient(700px_520px_at_50%_85%,rgba(242,185,80,0.07),transparent_60%)]" />
+          </div>
+
+          {/* 3) 금가루 텍스처 (반복 타일) */}
+          <div
+              className="absolute inset-0 opacity-25 bg-[url('/textures/gold-noise.png')] bg-repeat"
+              style={{ backgroundSize: "220px 220px" }}
+          />
+
+     {/* 상단 얇은 골드 라인 */}
+        <span className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[#F2B950]/35 to-transparent" />
+        </div>
+
           {/* Grab Header */}
           <div
             ref={dragRef}
             onClick={jumpNext}
-            className="relative select-none touch-none px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing"
+            className="relative select-none touch-none px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing z-10"
           >
             <div className="mx-auto h-2 w-14 rounded-full bg-white/30" />
-            <div className="mt-2 text-white">
-              {header ?? <div className="text-sm opacity-70">나의 예술 기록 · 모아보기</div>}
+            <div className="mt-2">
+              {header ?? (
+                <div className="text-sm text-white/80">나의 예술 기록 · 모아보기</div>
+              )}
             </div>
           </div>
 
           {/* Content */}
           <div
-            className="px-4 overflow-y-auto"
-            style={{
-                maxHeight: `calc(100vh - ${topPx ?? 0}px)`,
-                paddingBottom: "var(--bottom-safe)",  // 탭바+노치만큼 여백
-            }}
+            className="px-4 pb-[calc(70px+env(safe-area-inset-bottom,0px))] overflow-y-auto z-10 relative"
+            style={{ maxHeight: `calc(100vh - ${topPx ?? 0}px)` }}
           >
             {children}
           </div>
         </div>
+        {/* ▲▲▲ 바텀시트 컨테이너 끝 ▲▲▲ */}
       </div>
     </div>
   );

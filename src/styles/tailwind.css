@@ -42,3 +42,68 @@
   @supports (height: 100dvh) {
     html, body, #root { height: 100dvh; }
   }
+
+  /* Navy base + Gold speckle */
+.bg-navy-gold {
+    background-color: #0B1220; /* 다크 네이비 */
+    background-image:
+      radial-gradient(rgba(242,185,80,0.22) 0.8px, transparent 1px),
+      radial-gradient(rgba(242,185,80,0.10) 1px, transparent 1.3px),
+      radial-gradient(rgba(242,185,80,0.08) 0.6px, transparent 0.9px);
+    background-size: 3px 3px, 5px 5px, 7px 7px;
+    background-position: 0 0, 1px 2px, 2px 1px;
+  }
+  
+  /* 필요 시, 스펙클을 얕게 하고 싶으면 opacity 느낌으로 덮기 */
+  .bg-navy-gold-soft::before {
+    content: "";
+    position: absolute; inset: 0;
+    pointer-events: none;
+    background: inherit; /* 위 speckle 복제 */
+    opacity: .5;         /* 강도 조절 */
+  }
+
+
+  /* === AR 말풍선 공통 스타일 === */
+@layer components {
+    .ar-bubble {
+      @apply relative max-w-[62vw] px-3 py-2 rounded-2xl 
+             bg-white/10 backdrop-blur-md text-white text-[13px] leading-snug
+             border border-white/15 shadow-[0_10px_24px_-8px_rgba(0,0,0,.6)];
+    }
+    /* 금빛 테두리 + 살짝 광택 */
+    .ar-bubble--gold {
+      box-shadow:
+        0 10px 24px -10px rgba(242,185,80,.35),
+        inset 0 0 0 1px rgba(255,255,255,.12);
+      border-color: rgba(242,185,80,.35);
+    }
+    /* 말풍선 꼬리(아래쪽) */
+    .ar-bubble::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -9px;
+      width: 16px;
+      height: 10px;
+      clip-path: polygon(50% 100%, 0 0, 100% 0);
+      background: inherit;                 /* 본체 배경 이어 받기 */
+      border-bottom: 1px solid rgba(255,255,255,.18);
+      border-right:  1px solid rgba(255,255,255,.12);
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
+    }
+    /* 등장 애니메이션 */
+    .ar-bubble-appear {
+      animation: arPop .22s cubic-bezier(.21,1,.21,1) both;
+    }
+    @keyframes arPop {
+      0%   { transform: translate(-50%,-100%) scale(.86); opacity: 0 }
+      100% { transform: translate(-50%,-100%) scale(1);   opacity: 1 }
+    }
+    /* 텍스트 줄바꿈 & 이모지 살리기 */
+    .ar-bubble__text {
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+  }

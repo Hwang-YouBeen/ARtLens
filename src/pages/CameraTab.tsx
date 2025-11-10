@@ -4,10 +4,14 @@ import { useMyArtStore } from "../store/myArtStore";
 import { buildRefDescriptor, matchAndLocate, waitCv, type RefDesc } from "../lib/vision";
 
 type Bubble = { id: string; text: string };
+const MAX_BUBBLES = 7;
 const PRESET_BUBBLES: Bubble[] = [
-  { id: "b1", text: "호랑이 표정이 귀여워요" },
-  { id: "b2", text: "까치가 위에서 잔소리하는 느낌 😂" },
-  { id: "b3", text: "문양이 생각보다 세밀하다" },
+  { id: "b1", text: "숨 고른 호랑이의 밤" },
+  { id: "b2", text: "여백이 나를 바라본다" },
+  { id: "b3", text: "먹선 사이로 시간이 흐른다" },
+  { id: "b4", text: "까치가 용기를 건넨다" },
+  { id: "b5", text: "나는 오늘 맹수의 편" },
+  { id: "b6", text: "고요가 크게 울린다" },
 ];
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -23,6 +27,7 @@ export default function CameraTab() {
 
   // state
   const [comment, setComment] = useState("");
+  const [pendingComment, setPendingComment] = useState(""); // 전송된 코멘트 보관
   const [isSaving, setIsSaving] = useState(false);
   const addItem = useMyArtStore((s) => s.addItem);
 
@@ -33,12 +38,28 @@ export default function CameraTab() {
   const [rect, setRect] = useState<Rect | null>(null);
   const [bubbles, setBubbles] = useState<Bubble[]>(PRESET_BUBBLES);
 
+  // 입력 가능 여부 (엔터/버튼 공용)
+  const canSend = comment.trim().length > 0;
+
+  // 엔터 전송 핸들러 (상태 선언 뒤에 둬야 함)
+  const onCommentKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (canSend) sendComment();
+    }
+  };
+
   // 내 코멘트를 AR 말풍선에 즉시 추가
   const sendComment = () => {
     const t = comment.trim();
     if (!t) return;
-    setBubbles((prev) => [{ id: crypto.randomUUID(), text: t }, ...prev].slice(0, 6));
-    setComment("");
+
+    // 촬영 시 저장될 최종 코멘트로 보관
+    setPendingComment(t);
+
+    // AR 말풍선에도 즉시 반영
+    setBubbles((prev) => [{ id: crypto.randomUUID(), text: t }, ...prev].slice(0, MAX_BUBBLES));
+    setComment(""); // UX상 입력창은 비워도 pendingComment엔 남음
   };
 
   // ─────────────────────────────────────────────────────────────
@@ -116,7 +137,6 @@ export default function CameraTab() {
     (async () => {
       await waitCv();
       setCvReady(true);
-      // 파일명/경로 정확히!
       const ref = await buildRefDescriptor("/ref/hojakdo.jpeg");
       setRefDesc(ref);
     })();
@@ -169,7 +189,7 @@ export default function CameraTab() {
   }, [cvReady, refDesc]);
 
   // ─────────────────────────────────────────────────────────────
-  // 4) 촬영 & 저장 (검은 썸네일 방지용 재그리기 포함)
+  // 4) 촬영 & 저장 (검은 썸네일 방지용 재그리기 + 저장 직전 재매칭)
   // ─────────────────────────────────────────────────────────────
   const handleCapture = async () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -178,11 +198,23 @@ export default function CameraTab() {
 
     setIsSaving(true);
 
+    // 최신 프레임으로 캔버스 갱신
     if (v.readyState >= 2 && v.videoWidth && v.videoHeight) {
       c.width = v.videoWidth;
       c.height = v.videoHeight;
       const ctx = c.getContext("2d")!;
       ctx.drawImage(v, 0, 0, c.width, c.height);
+    }
+
+    // 저장 직전 한 번 더 매칭해서 확정
+    let recognized = false;
+    try {
+      if (cvReady && refDesc) {
+        const finalRes = await matchAndLocate(c, refDesc, 0.58);
+        recognized = !!(finalRes.ok && finalRes.rect);
+      }
+    } catch (e) {
+      console.warn("final match error:", e);
     }
 
     const dataURL = c.toDataURL("image/jpeg", 0.9);
@@ -197,21 +229,30 @@ export default function CameraTab() {
     tctx.drawImage(c, 0, 0, thumbCanvas.width, thumbCanvas.height);
     const thumbData = thumbCanvas.toDataURL("image/jpeg", 0.8);
 
+    // 전송으로 확정한 게 있으면 그걸 우선 저장
+    const commentToSave = (pendingComment || comment || "").trim();
+
+    // 살짝 진동(지원 브라우저 한정)
+    if (navigator.vibrate) navigator.vibrate(20);
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
+
         addItem({
           id: crypto.randomUUID(),
           image: dataURL,
           thumb: thumbData,
-          comment,
+          comment: commentToSave,
           lat: latitude,
           lng: longitude,
           shotAt: new Date().toISOString(),
-          recognizedWorkId: detected ? "kkachi_tiger" : undefined,
-          museumName: detected ? "호암미술관" : undefined,
+          recognizedWorkId: recognized ? "kkachi_tiger" : undefined,
+          museumName: recognized ? "호암미술관" : undefined,
         });
+
         alert("✅ 저장 완료! 지도 탭에서 확인해보세요.");
+        setPendingComment("");
         setComment("");
         setIsSaving(false);
       },
@@ -223,9 +264,12 @@ export default function CameraTab() {
     );
   };
 
-  // rect → 말풍선 앵커 3곳(상단 중앙, 좌중앙, 우중앙)
+  // 앵커 포인트
   const bubbleAnchors = rect ? getBubbleAnchorsFromRect(rect) : [];
   const showAR = detected && !!rect && bubbleAnchors.length > 0;
+
+  // ✅ 미검출 가이드 노출 조건
+  const showHint = cvReady && camState === "ready" && !detected;
 
   return (
     <div className="relative w-full h-[100dvh] bg-black text-white overflow-hidden">
@@ -245,7 +289,7 @@ export default function CameraTab() {
         {!cvReady ? "CV: loading…" : detected ? "Hojakdo: DETECTED" : "CV: ready"}
       </div>
 
-      {/* 사용자가 터치해서 play() 재시도 (iOS) */}
+      {/* 사용자 제스처 필요 버튼 */}
       {camState === "needTap" && (
         <button
           onClick={async () => {
@@ -263,6 +307,19 @@ export default function CameraTab() {
         </button>
       )}
 
+      {/* ✅ 미검출 가이드 오버레이 */}
+      {showHint && (
+        <div className="absolute inset-0 pointer-events-none grid place-items-center z-[35]">
+          <div className="relative text-center">
+            <div className="w-[68vw] max-w-[520px] aspect-[4/3] rounded-xl border-2 border-dashed border-white/55 animate-pulse" />
+            <p className="mt-3 text-[13px] text-white/85">
+              작품 전체가 화면에 들어오도록{" "}
+              <span className="text-[#F2B950] font-semibold">카메라를 조절</span> 해주세요
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* AR 오버레이 (rect) */}
       {showAR && rect && (
         <div className="pointer-events-none absolute inset-0">
@@ -274,11 +331,11 @@ export default function CameraTab() {
           {/* 말풍선들 */}
           {bubbleAnchors.slice(0, bubbles.length).map((p, i) => (
             <div
-              key={i}
-              className="absolute px-3 py-2 rounded-xl backdrop-blur bg-black/55 text-white text-xs shadow"
-              style={{ left: p.x, top: p.y, transform: "translate(-50%,-100%)" }}
+              key={bubbles[i].id ?? i}
+              className="absolute ar-bubble ar-bubble--gold ar-bubble-appear"
+              style={{ left: p.x, top: p.y, transform: "translate(-50%,-110%)" }}
             >
-              {bubbles[i].text}
+              <span className="ar-bubble__text">{bubbles[i].text}</span>
             </div>
           ))}
         </div>
@@ -286,34 +343,79 @@ export default function CameraTab() {
 
       {/* 하단 UI (탭바 위로 띄움) */}
       <div
-        className="absolute left-0 right-0 bg-black/50 backdrop-blur p-3 flex gap-2 items-center z-[40]"
+        className="absolute left-0 right-0 bg-black/50 backdrop-blur p-3 flex items-center gap-3 z-[40]"
         style={{ bottom: "calc(70px + env(safe-area-inset-bottom, 0px) + 10px)" }}
       >
-        <input
-          type="text"
-          placeholder="코멘트를 입력하세요..."
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          className="flex-1 rounded-lg px-3 py-2 text-black"
-        />
-        <button onClick={sendComment} className="px-3 h-10 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm">
-          전송
-        </button>
+        {/* 입력창 + 내장 전송 아이콘 버튼 */}
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="나의 감상 남기기..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyDown={onCommentKeyDown}
+            className="w-full rounded-2xl px-4 py-3 pr-12 text-black shadow-sm bg-white/95 focus:outline-none"
+          />
+          <button
+            type="button"
+            aria-label="전송"
+            disabled={!canSend}
+            onClick={sendComment}
+            className={[
+              "absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full",
+              "grid place-items-center transition",
+              "ring-1 ring-[#F2B950]/60 bg-black/30",
+              "hover:bg-[#F2B950]/15 active:translate-x-0.5 active:-translate-y-0.5",
+              "disabled:opacity-40 disabled:cursor-not-allowed",
+            ].join(" ")}
+          >
+            {/* 종이비행기 아이콘 (네이비 테마) */}
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="#0B1224"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 2L11 13" />
+              <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 아이폰 스타일 셔터 */}
         <button
           onClick={handleCapture}
           disabled={isSaving}
-          className={`w-14 h-14 rounded-full ${isSaving ? "bg-gray-400" : "bg-red-500"}`}
+          aria-label="셔터"
+          className={[
+            "group relative w-20 h-20 rounded-full border-4 border-white bg-transparent",
+            "grid place-items-center select-none transition active:scale-95",
+            isSaving ? "opacity-60" : "",
+          ].join(" ")}
         >
-          {isSaving ? "..." : "●"}
+          <span className="w-14 h-14 rounded-full bg-white transition-transform duration-150 group-active:scale-90" />
         </button>
       </div>
     </div>
   );
 }
 
-function getBubbleAnchorsFromRect(r: Rect) {
-  const topCenter = { x: r.x + r.w / 2, y: Math.max(0, r.y - 12) };
-  const leftCenter = { x: r.x, y: r.y + r.h / 2 };
-  const rightCenter = { x: r.x + r.w, y: r.y + r.h / 2 };
-  return [topCenter, leftCenter, rightCenter];
+function getBubbleAnchorsFromRect(r: { x: number; y: number; w: number; h: number }) {
+  const pad = Math.max(8, Math.min(r.w, r.h) * 0.06); // 사각형 바깥 여백
+  const cx = r.x + r.w / 2;
+  const cy = r.y + r.h / 2;
+
+  return [
+    { x: cx, y: r.y - pad }, // top-center
+    { x: r.x - pad, y: cy }, // left-center
+    { x: r.x + r.w + pad, y: cy }, // right-center
+    { x: cx, y: r.y + r.h + pad }, // bottom-center
+    { x: r.x - pad, y: r.y - pad }, // top-left (outside)
+    { x: r.x + r.w + pad, y: r.y - pad }, // top-right (outside)
+    { x: r.x - pad, y: r.y + r.h + pad }, // bottom-left (outside)
+  ];
 }

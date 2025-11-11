@@ -11,16 +11,16 @@ type ArtItem = {
   };
 
   const artworks: ArtItem[] = [
-    { title: "금동미륵보살반가사유상 (국보 83호)", artist: "국립중앙박물관", file: "gilt_bodhisattva_statue.jpeg", visitedAt: "2025-11-01", comment: "정교함이 압도적!" },
-    { title: "묘법 – 박서보", artist: "국립현대미술관 서울관", file: "ecriture_parkseobo.jpeg", visitedAt: "2025-10-20", comment: "질감이 주는 몰입감 굿" },
-    { title: "노란 옷을 입은 여인상 – 이인성", artist: "대구미술관", file: "lady_in_yellow_leeinseong.jpeg", visitedAt: "2025-09-13", comment: "채도의 대비가 선명해요" },
-    { title: "05-IV-71#200 (Universe) – 김환기", artist: "리움미술관", file: "universe_kimwhanki.jpeg", visitedAt: "2025-08-30", comment: "점과 공간의 리듬이 좋아요" },
-    { title: "공간 – 이우환", artist: "부산시립미술관", file: "space_leewoo-hwan.jpeg", visitedAt: "2025-08-01", comment: "여백의 미를 다시 보게 됨" },
-    { title: "별이 빛나는 밤 – 빈센트 반 고흐", artist: "MoMA", file: "starry_night_vangogh.jpeg", visitedAt: "2023-08-20", comment: "실물의 붓자국이 살아있다" },
-    { title: "춤추는 하니와", artist: "도쿄국립박물관", file: "dancing_haniwa.jpeg", visitedAt: "2024-04-14", comment: "생동감이 귀엽다" },
-    { title: "모나리자 – 레오나르도 다 빈치", artist: "루브르", file: "mona_lisa_davinci.jpeg", visitedAt: "2024-12-05", comment: "사람이 정말 많았음…" },
-    { title: "눈 속의 사냥꾼 – 브뤼겔", artist: "빈 미술사박물관(KHM)", file: "hunters_in_the_snow_breughel.jpeg", visitedAt: "2024-12-07", comment: "겨울 풍경 디테일 미쳤다" },
-    { title: "Whaam! – 로이 리히텐슈타인", artist: "테이트 모던", file: "whaam_lichtenstein.jpeg", visitedAt: "2022-11-03", comment: "팝아트의 상징성 체감" },
+    { title: "금동미륵보살반가사유상 (국보 83호)", artist: "국립중앙박물관", file: "gilt_bodhisattva_statue.jpeg", visitedAt: "2025-11-01", comment: "무게가 있는 금속인데도 마음은 오히려 가벼워지는 느낌." },
+    { title: "묘법 – 박서보", artist: "국립현대미술관 서울관", file: "ecriture_parkseobo.jpeg", visitedAt: "2025-10-20", comment: "질감은 거칠지만 마음은 점점 고요해진다." },
+    { title: "노란 옷을 입은 여인상 – 이인성", artist: "대구미술관", file: "lady_in_yellow_leeinseong.jpeg", visitedAt: "2025-09-13", comment: "햇빛 속에서도 마음은 늘 같은 색이 아닐 수 있음을 배운다." },
+    { title: "05-IV-71#200 (Universe) – 김환기", artist: "리움미술관", file: "universe_kimwhanki.jpeg", visitedAt: "2025-08-30", comment: "끝이 없다는 사실이 오히려 안심이 된다." },
+    { title: "공간 – 이우환", artist: "부산시립미술관", file: "space_leewoo-hwan.jpeg", visitedAt: "2025-08-01", comment: "덜어내는 용기—내 일상에도 조금씩 적용해보고 싶다." },
+    { title: "별이 빛나는 밤 – 빈센트 반 고흐", artist: "MoMA", file: "starry_night_vangogh.jpeg", visitedAt: "2023-08-20", comment: "하늘이 소용돌이치는데, 이상하게 마음은 멈춰 선다." },
+    { title: "춤추는 하니와", artist: "도쿄국립박물관", file: "dancing_haniwa.jpeg", visitedAt: "2024-04-14", comment: "역사도 결국 누군가의 장난기에서 출발할지 모른다." },
+    { title: "모나리자 – 레오나르도 다 빈치", artist: "루브르", file: "mona_lisa_davinci.jpeg", visitedAt: "2024-12-05", comment: "정답이 없는 표정 앞에서 나도 설명을 멈춘다." },
+    { title: "눈 속의 사냥꾼 – 브뤼겔", artist: "빈 미술사박물관(KHM)", file: "hunters_in_the_snow_breughel.jpeg", visitedAt: "2024-12-07", comment: "고요한 겨울에도 삶은 계속된다는 확신." },
+    { title: "Whaam! – 로이 리히텐슈타인", artist: "테이트 모던", file: "whaam_lichtenstein.jpeg", visitedAt: "2022-11-03", comment: "보는 것과 느끼는 것 사이의 거리를 생각하게 된다." },
   ];
 
 const fmt = (iso?: string) =>
@@ -143,7 +143,7 @@ export default function MyArtGrid() {
                   <div className="text-sm text-white/80">
                     {selected.item.recognizedWorkId === "kkachi_tiger" ? "호암미술관" : selected.item.museumName ?? "내 위치"}
                   </div>
-                  <div className="text-sm text-white/70">관람 일: {fmt(selected.item.shotAt)}</div>
+                  <div className="text-sm text-white/70">관람일: {fmt(selected.item.shotAt)}</div>
                   {selected.item.comment && <div className="pt-2 text-[13px] leading-5">{selected.item.comment}</div>}
                 </>
               ) : (

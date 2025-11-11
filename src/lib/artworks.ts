@@ -1,5 +1,3 @@
-// src/lib/artworks.ts
-
 export type Artwork = {
   id: string;
   museum: string;
@@ -21,10 +19,10 @@ export const ARTWORKS: Artwork[] = [
   { id: "uk-01", museum: "테이트 모던", title: "Whaam!", artist: "로이 리히텐슈타인" },
 ];
 
-// ✅ MVP 데모용 ‘호작도(까치호랑이)’ 더미 작품 (국립중앙박물관으로 귀속)
+// MVP용 호작도
 export const MVP_HOJAKDO: Artwork = {
   id: "mvp-hojakdo",
-  museum: "국립중앙박물관",
+  museum: "호암미술관",
   title: "호작도(까치호랑이)",
   alias: "호작도",
 };

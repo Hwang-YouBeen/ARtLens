@@ -8,10 +8,17 @@
     />
     <title>artlens</title>
 
-    <!-- (선택) 성능: wasm 미리 가져오기 -->
+    <!-- favicon / theme -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0B1224" />
+
+    <!-- 성능: wasm 미리 가져오기 -->
     <link rel="preload" href="/opencv/opencv_js.wasm" as="fetch" crossorigin>
 
-    <!-- ✅ opencv.js가 wasm을 /opencv/opencv_js.wasm 에서 찾도록 경로 고정 -->
+    <!-- opencv.js가 wasm을 /opencv/opencv_js.wasm 에서 찾도록 경로 고정 -->
     <script>
       window.Module = {
         locateFile: function (path) {
@@ -21,7 +28,7 @@
       };
     </script>
 
-    <!-- ✅ 로컬 정적 자산에서 OpenCV만 단일 로드 (중복 스크립트 금지) -->
+    <!-- 로컬 정적 자산에서 OpenCV만 단일 로드 (중복 스크립트 금지) -->
     <script defer src="/opencv/opencv.js"></script>
   </head>
   <body>

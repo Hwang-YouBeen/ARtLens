@@ -2,108 +2,165 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ✅ 루트 체인 높이 확정 */
+/* =========================================
+ * Base: 문서 루트/바디 초기화
+ * =======================================*/
 @layer base {
   html, body, #root { height: 100%; }
-  /* ✅ Vite 템플릿이 body에 건 기본 스타일 무력화 */
+
+  /* Vite 템플릿 기본 body 스타일 무력화 */
   body {
-    display: block !important;       /* flex → block */
-    place-items: unset !important;   /* center → unset */
-    min-width: 0 !important;         /* 320px → 0 */
-    height: 100% !important;         /* min-height:100vh 대신 높이를 확정 */
+    display: block !important;        /* flex → block */
+    place-items: unset !important;    /* center → unset */
+    min-width: 0 !important;          /* 320px → 0 */
+    height: 100% !important;          /* min-height: 100vh 대신 고정 높이 */
   }
 }
 
-/* === Google Maps InfoWindow close button tweak === */
+/* 100dvh 지원 시 iOS 노치 환경 대응 */
+@supports (height: 100dvh) {
+  html, body, #root { height: 100dvh; }
+}
+
+/* =========================================
+ * CSS Variables
+ * =======================================*/
+:root {
+  --nav-h: 70px; /* 탭바 높이 */
+  --bottom-safe: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  --vvh: 100svh; /* 현재 보이는 뷰포트 높이 (JS에서 갱신 가능) */
+}
+
+/* =========================================
+ * Google Maps InfoWindow: 닫기 버튼 등 스타일
+ * =======================================*/
 .gm-style-iw button.gm-ui-hover-effect {
-    opacity: 1 !important;
-    right: 6px !important;
-    top: 6px !important;
-    width: 22px !important;
-    height: 22px !important;
-    transform: scale(0.85);
-    filter: none !important;          /* 어두운 테마에서도 선명 */
-    mix-blend-mode: normal !important;
-    display: none !important;
-  }
-  
-  .gm-style-iw-c {
-    padding-right: 28px !important;   /* 닫기 버튼 자리 확보 */
-  }
+  opacity: 1 !important;
+  right: 6px !important;
+  top: 6px !important;
+  width: 22px !important;
+  height: 22px !important;
+  transform: scale(0.85);
+  filter: none !important;           /* 어두운 테마에서도 선명 */
+  mix-blend-mode: normal !important;
+  display: none !important;          /* 닫기 버튼 숨김 */
+}
 
-  :root{
-    --nav-h: 70px; /* 탭바 높이 */
-    --bottom-safe: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
-    /* 현재 보이는 뷰포트 높이 (JS에서 채워줌) */
-    --vvh: 100svh;
-  }
-  
-  /* iOS 노치 대응 + 100dvh */
-  @supports (height: 100dvh) {
-    html, body, #root { height: 100dvh; }
-  }
+.gm-style-iw-c {
+  padding-right: 28px !important;    /* 닫기 버튼 자리 확보(유지) */
+}
 
-  /* Navy base + Gold speckle */
+/* =========================================
+ * Theme: Navy base + Gold speckle
+ * =======================================*/
 .bg-navy-gold {
-    background-color: #0B1220; /* 다크 네이비 */
-    background-image:
-      radial-gradient(rgba(242,185,80,0.22) 0.8px, transparent 1px),
-      radial-gradient(rgba(242,185,80,0.10) 1px, transparent 1.3px),
-      radial-gradient(rgba(242,185,80,0.08) 0.6px, transparent 0.9px);
-    background-size: 3px 3px, 5px 5px, 7px 7px;
-    background-position: 0 0, 1px 2px, 2px 1px;
-  }
-  
-  /* 필요 시, 스펙클을 얕게 하고 싶으면 opacity 느낌으로 덮기 */
-  .bg-navy-gold-soft::before {
-    content: "";
-    position: absolute; inset: 0;
-    pointer-events: none;
-    background: inherit; /* 위 speckle 복제 */
-    opacity: .5;         /* 강도 조절 */
-  }
+  background-color: #0B1220; /* 다크 네이비 */
+  background-image:
+    radial-gradient(rgba(242,185,80,0.22) 0.8px, transparent 1px),
+    radial-gradient(rgba(242,185,80,0.10) 1px, transparent 1.3px),
+    radial-gradient(rgba(242,185,80,0.08) 0.6px, transparent 0.9px);
+  background-size: 3px 3px, 5px 5px, 7px 7px;
+  background-position: 0 0, 1px 2px, 2px 1px;
+}
 
+/* 스펙클 강도 조절(얕게) */
+.bg-navy-gold-soft::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: inherit; /* 스펙클 복제 */
+  opacity: .5;         /* 강도 조절 */
+}
 
-  /* === AR 말풍선 공통 스타일 === */
+/* =========================================
+ * Components Layer: AR 말풍선(기본 정의)
+ *  - 아래 Utilities 레이어에서 동일 클래스가 재정의되어 덮어씀
+ * =======================================*/
 @layer components {
-    .ar-bubble {
-      @apply relative max-w-[62vw] px-3 py-2 rounded-2xl 
-             bg-white/10 backdrop-blur-md text-white text-[13px] leading-snug
-             border border-white/15 shadow-[0_10px_24px_-8px_rgba(0,0,0,.6)];
-    }
-    /* 금빛 테두리 + 살짝 광택 */
-    .ar-bubble--gold {
-      box-shadow:
-        0 10px 24px -10px rgba(242,185,80,.35),
-        inset 0 0 0 1px rgba(255,255,255,.12);
-      border-color: rgba(242,185,80,.35);
-    }
-    /* 말풍선 꼬리(아래쪽) */
-    .ar-bubble::after {
-      content: "";
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: -9px;
-      width: 16px;
-      height: 10px;
-      clip-path: polygon(50% 100%, 0 0, 100% 0);
-      background: inherit;                 /* 본체 배경 이어 받기 */
-      border-bottom: 1px solid rgba(255,255,255,.18);
-      border-right:  1px solid rgba(255,255,255,.12);
-      filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
-    }
-    /* 등장 애니메이션 */
-    .ar-bubble-appear {
-      animation: arPop .22s cubic-bezier(.21,1,.21,1) both;
-    }
-    @keyframes arPop {
-      0%   { transform: translate(-50%,-100%) scale(.86); opacity: 0 }
-      100% { transform: translate(-50%,-100%) scale(1);   opacity: 1 }
-    }
-    /* 텍스트 줄바꿈 & 이모지 살리기 */
-    .ar-bubble__text {
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
+  .ar-bubble {
+    @apply relative max-w-[62vw] px-3 py-2 rounded-2xl
+           bg-white/10 backdrop-blur-md text-white text-[13px] leading-snug
+           border border-white/15 shadow-[0_10px_24px_-8px_rgba(0,0,0,.6)];
   }
+
+  /* 금빛 테두리 + 살짝 광택 */
+  .ar-bubble--gold {
+    box-shadow:
+      0 10px 24px -10px rgba(242,185,80,.35),
+      inset 0 0 0 1px rgba(255,255,255,.12);
+    border-color: rgba(242,185,80,.35);
+  }
+
+  /* 말풍선 꼬리(아래쪽) */
+  .ar-bubble::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -9px;
+    width: 16px;
+    height: 10px;
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    background: inherit;                 /* 본체 배경 이어 받기 */
+    border-bottom: 1px solid rgba(255,255,255,.18);
+    border-right:  1px solid rgba(255,255,255,.12);
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
+  }
+
+  /* 등장 애니메이션 (주의: 아래 utilities의 동일 이름 keyframes가 최종 적용) */
+  .ar-bubble-appear {
+    animation: arPop .22s cubic-bezier(.21,1,.21,1) both;
+  }
+
+  /* components 레이어용 arPop (utilities 레이어에서 덮임) */
+  @keyframes arPop {
+    0%   { transform: translate(-50%,-100%) scale(.86); opacity: 0 }
+    100% { transform: translate(-50%,-100%) scale(1);   opacity: 1 }
+  }
+
+  /* 텍스트 줄바꿈 & 이모지 유지 */
+  .ar-bubble__text {
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+}
+
+/* =========================================
+ * Utilities Layer: 유틸리티/보조 클래스
+ *  - 동일 클래스명(.ar-bubble 등) 재정의로 시각 스타일을 덮어씀
+ * =======================================*/
+@layer utilities {
+  /* 두 줄 말줄임 */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 말풍선 (유틸리티 레이어에서 재정의) */
+  .ar-bubble {
+    @apply px-3 py-2 rounded-xl backdrop-blur text-white text-xs shadow
+           bg-black/55 border border-white/10;
+  }
+
+  .ar-bubble--gold {
+    @apply px-3 py-2 rounded-xl backdrop-blur text-[13px] shadow
+           bg-[#0B1224]/80 border border-[#F2B950]/40;
+  }
+
+  /* 등장(pop) + 은은한 흔들림 (keyframes 전역, 아래 정의가 최종 적용) */
+  @keyframes arPop {
+    0%   { transform: scale(.92); opacity: 0 }
+    100% { transform: scale(1);   opacity: 1 }
+  }
+  .animate-arPop { animation: arPop .22s cubic-bezier(.2,.8,.2,1); }
+
+  @keyframes arWobble {
+    0%, 95%, 100% { transform: translate(-50%,-100%) rotate(0deg); }
+    97% { transform: translate(calc(-50% + 1px), calc(-100% - 1px)) rotate(-1.3deg); }
+    99% { transform: translate(calc(-50% - 1px), calc(-100% + 2px)) rotate(1.2deg); }
+  }
+  .animate-arWobble { animation: arWobble 6s ease-in-out infinite; }
+}

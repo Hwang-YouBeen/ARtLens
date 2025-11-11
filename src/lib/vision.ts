@@ -1,6 +1,3 @@
-// src/lib/vision.ts
-// 간단 MVP: 템플릿 매칭(TM_CCOEFF_NORMED) 기반 호작도 인식 (멀티스케일)
-
 export type RefDesc = {
     tpl: any; // cv.Mat (grayscale template)
     w: number;

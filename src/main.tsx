@@ -2,7 +2,7 @@ import "./styles/tailwind.css";
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 //import './index.css'
-import App from './App.tsx'
+import App from './App'
 
 // iOS 주소창 변동 대응: 현재 보이는 뷰포트 높이를 CSS 변수로 노출
 function mountViewportFix() {
